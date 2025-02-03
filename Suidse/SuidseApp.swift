@@ -11,7 +11,7 @@ import SwiftUI
 struct SuidseApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            SettingsView()
         }
     }
 }
