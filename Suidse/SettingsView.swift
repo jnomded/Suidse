@@ -85,6 +85,7 @@ struct SettingsView: View {
                         Text($0)
                     }
                 }
+                .frame(width: 75)
             }
         }
        
