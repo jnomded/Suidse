@@ -11,7 +11,15 @@ import SwiftUI
 struct SuidseApp: App {
     var body: some Scene {
         WindowGroup {
-            SettingsView()
+            SettingsView(isConversionContext: false)
+                
         }
+        
+        WindowGroup {
+            SettingsView(isConversionContext: true)
+                
+        }
+        .handlesExternalEvents(matching: ["conversion"])
+        
     }
 }
