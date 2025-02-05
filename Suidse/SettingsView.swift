@@ -186,30 +186,32 @@ struct SettingsView: View {
             // save as button placed as overlay
             if isConversionContext {
                 VStack {
-                    Spacer() // pushes button to the bottom
-                    Button("Save As...") {
-                        //save logic goes here (ง •̀_•́)ง
-                        saveConvertedFiles()
-                        
+                    Spacer() // push content to the bottom
+                    ZStack {
+                        // Bottom layer of zstack is a full width HStack for the file count text
+                        HStack {
+                            if !fileHandler.inputUrls.isEmpty {
+                                Text("\(fileHandler.inputUrls.count) file\(fileHandler.inputUrls.count == 1 ? "" : "s") selected")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                    .padding(.leading, 45)
+                            }
+                            Spacer()
+                        }
+                        // centered Save As button
+                        Button("Save As...") {
+                            // save logic goes here
+                            saveConvertedFiles()
+                        }
+                        .alert("Error", isPresented: $showError) {
+                            Button("OK", role: .cancel) { }
+                        } message: {
+                            Text(errorMessage)
+                        }
                     }
-                    .frame(maxWidth: .infinity)
                     .padding(.bottom, 10)
-                    .alert("Error", isPresented: $showError) {
-                        Button("OK", role: .cancel) { }
-                    } message: {
-                        Text(errorMessage)
-                    }
-                    
-                    if !fileHandler.inputUrls.isEmpty {
-                        Text("\(fileHandler.inputUrls.count) file\(fileHandler.inputUrls.count == 1 ? "" : "s") selected")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .padding(.bottom, 8)
-                    }
-                    
-                    
                 }
-                // overlay needs to span the same area as the main view
+                // overlay spans the same area as the main view
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }

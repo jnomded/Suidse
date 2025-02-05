@@ -9,31 +9,21 @@ import SwiftUI
 
 
 class AppDelegate: NSObject, NSApplicationDelegate {
-    static let shared = AppDelegate()
-    private var fileHandler: FileHandler?
-    
     func application(_ application: NSApplication, open urls: [URL]) {
-        guard let fileHandler = fileHandler else {
-            print("FileHandler not initialized")
-            return
-        }
-        fileHandler.handleUrls(urls)
+        FileHandler.shared.handleUrls(urls)
         NSApp.activate(ignoringOtherApps: true)
-    }
-    
-    func setFileHandler(_ handler: FileHandler) {
-        fileHandler = handler
     }
 }
 
 @main
 struct SuidseApp: App {
-    @StateObject private var fileHandler = FileHandler()
+    // Use the shared instance
+    @StateObject private var fileHandler = FileHandler.shared
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     
-    
     var body: some Scene {
-        // settings window for normal launch
+        
+        // Settings window for normal launch
         WindowGroup("Settings") {
             SettingsView(isConversionContext: false)
                 .frame(width: 350, height: 300)
@@ -43,7 +33,7 @@ struct SuidseApp: App {
         .defaultSize(width: 350, height: 300)
         .handlesExternalEvents(matching: [])
         
-        // conversion for opening files, does not seem to conver files tho...
+        // Conversion window when opening files
         WindowGroup {
             SettingsView(isConversionContext: true)
                 .frame(width: 350, height: 325)
@@ -56,8 +46,9 @@ struct SuidseApp: App {
 }
 
 
-
 class FileHandler: ObservableObject {
+    static let shared = FileHandler()
+    
     @Published var inputUrls: [URL] = []
     
     func handleUrls(_ urls: [URL]) {
