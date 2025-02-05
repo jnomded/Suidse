@@ -59,3 +59,8 @@ class FileHandler: ObservableObject {
         }
     }
 }
+
+#Preview {
+    SettingsView(isConversionContext: true)
+        .environmentObject(FileHandler())
+}
