@@ -194,7 +194,7 @@ struct SettingsView: View {
                                 Text("\(fileHandler.inputUrls.count) file\(fileHandler.inputUrls.count == 1 ? "" : "s") selected")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
-                                    .padding(.leading, 45)
+                                    .padding(.leading, 40)
                             }
                             Spacer()
                         }
@@ -294,8 +294,7 @@ struct SettingsView: View {
     
     private func saveConvertedFiles() {
         guard !fileHandler.inputUrls.isEmpty else {
-            
-            errorMessage = "No images slected"
+            errorMessage = "No images selected"
             showError = true
             return
         }
@@ -310,39 +309,61 @@ struct SettingsView: View {
             guard response == .OK, let outputURL = savePanel.url else { return }
             
             let fileManager = FileManager.default
-            let folderName = "Converted_\(Date().formatted(.dateTime.year().month().day().hour().minute().second()))"
-            let outputFolder = outputURL.appendingPathComponent(folderName)
+            let destinationFolder: URL
             
-            do {
-                try fileManager.createDirectory(at: outputFolder, withIntermediateDirectories: true, attributes: nil)
+            // only creates a subfolder if multiple files are being converted
+            if self.fileHandler.inputUrls.count > 1 {
+                let folderName = "Converted_\(Date().formatted(.dateTime.year().month().day().hour().minute().second()))"
+                destinationFolder = outputURL.appendingPathComponent(folderName)
+                do {
+                    try fileManager.createDirectory(at: destinationFolder, withIntermediateDirectories: true, attributes: nil)
+                } catch {
+                    self.errorMessage = "Could not create folder: \(error.localizedDescription)"
+                    self.showError = true
+                    return
+                }
+            } else {
+                destinationFolder = outputURL
+            }
+            
+            // process each selected file
+            for inputURL in self.fileHandler.inputUrls {
+                guard let image = NSImage(contentsOf: inputURL) else { continue }
                 
-                for inputURL in self.fileHandler.inputUrls {
-                    guard let image = NSImage(contentsOf: inputURL) else {continue}
-                    
-                    //gets the original files name but without its extension
-                    let originalName = inputURL.deletingPathExtension( ).lastPathComponent
-                    let outputPath = outputFolder
-                        .appendingPathComponent(originalName)
-                        .appendingPathExtension(self.selectedImageType.lowercased())
-                    
-                    //conversion
-                    guard let convertedData = self.convertImage(image, to: self.selectedImageType, compressionLevel: Int(self.compressionLevel)) else {
-                        self.errorMessage = "Faled to convert \(inputURL.lastPathComponent)"
-                        self.showError = true
-                        continue
-                    }
-                    
-                    //save it
-                    try convertedData.write(to: outputPath)
-                    
+                //gets the original files name but without its extension
+                let originalName = inputURL.deletingPathExtension().lastPathComponent
+                let outputPath = destinationFolder
+                    .appendingPathComponent(originalName)
+                    .appendingPathExtension(self.selectedImageType.lowercased())
+                
+                // conversion!!
+                guard let convertedData = self.convertImage(image, to: self.selectedImageType, compressionLevel: Int(self.compressionLevel)) else {
+                    self.errorMessage = "Failed to convert \(inputURL.lastPathComponent)"
+                    self.showError = true
+                    continue
                 }
                 
-                //open the folder in Finder after conversion
-                NSWorkspace.shared.activateFileViewerSelecting([outputFolder])
-                
-            } catch {
-                self.errorMessage = error.localizedDescription
-                self.showError = true
+                do { //save it
+                    try convertedData.write(to: outputPath)
+                } catch {
+                    self.errorMessage = "Error writing file \(outputPath.lastPathComponent): \(error.localizedDescription)"
+                    self.showError = true
+                }
+            }
+            
+            // opens folder in finder after it gets converted
+            if self.fileHandler.inputUrls.count > 1 {
+                NSWorkspace.shared.activateFileViewerSelecting([destinationFolder])
+            } else {
+                // unless it is one file
+                let originalName = self.fileHandler.inputUrls.first!.deletingPathExtension().lastPathComponent
+                let outputPath = destinationFolder
+                    .appendingPathComponent(originalName)
+                    .appendingPathExtension(self.selectedImageType.lowercased())
+                NSWorkspace.shared.activateFileViewerSelecting([outputPath])
+            }
+            if isConversionContext {
+                NSApplication.shared.terminate(nil)
             }
         }
     }

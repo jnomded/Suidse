@@ -17,13 +17,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
 @main
 struct SuidseApp: App {
-    // Use the shared instance
     @StateObject private var fileHandler = FileHandler.shared
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     
     var body: some Scene {
-        
-        // Settings window for normal launch
+        // Settings WindowGroup
         WindowGroup("Settings") {
             SettingsView(isConversionContext: false)
                 .frame(width: 350, height: 300)
@@ -33,8 +31,8 @@ struct SuidseApp: App {
         .defaultSize(width: 350, height: 300)
         .handlesExternalEvents(matching: [])
         
-        // Conversion window when opening files
-        WindowGroup {
+        // Single Conversion Window
+        Window("Conversion", id: "conversionWindow") {
             SettingsView(isConversionContext: true)
                 .frame(width: 350, height: 325)
                 .environmentObject(fileHandler)
