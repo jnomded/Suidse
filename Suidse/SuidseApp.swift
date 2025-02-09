@@ -7,7 +7,6 @@
 
 import SwiftUI
 
-
 class AppDelegate: NSObject, NSApplicationDelegate {
     func application(_ application: NSApplication, open urls: [URL]) {
         FileHandler.shared.handleUrls(urls)
@@ -21,17 +20,12 @@ struct SuidseApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     
     var body: some Scene {
-        // Settings WindowGroup
         WindowGroup("Settings") {
             SettingsView(isConversionContext: false)
-                .frame(width: 350, height: 300)
                 .environmentObject(fileHandler)
         }
         .windowResizability(.contentSize)
-        .defaultSize(width: 350, height: 300)
-        .handlesExternalEvents(matching: [])
         
-        // Single Conversion Window
         Window("Conversion", id: "conversionWindow") {
             SettingsView(isConversionContext: true)
                 .frame(width: 350, height: 325)
@@ -42,7 +36,6 @@ struct SuidseApp: App {
         .handlesExternalEvents(matching: Set(arrayLiteral: "*"))
     }
 }
-
 
 class FileHandler: ObservableObject {
     static let shared = FileHandler()
@@ -58,9 +51,4 @@ class FileHandler: ObservableObject {
             return ["jpg", "jpeg", "png", "heic", "webp", "tiff", "bmp", "gif"].contains(ext)
         }
     }
-}
-
-#Preview {
-    SettingsView(isConversionContext: true)
-        .environmentObject(FileHandler())
 }

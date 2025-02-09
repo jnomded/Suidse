@@ -3,12 +3,10 @@
 //  Suidse
 //
 //  Created by James Edmond on 2/2/25.
-//
 import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject var fileHandler: FileHandler
-    
     let isConversionContext: Bool
     
     @State private var compressionLevel: Double = 2
@@ -22,112 +20,98 @@ struct SettingsView: View {
     @State private var deleteFiles: Bool = false
     @State private var selectedImageType = "JPEG"
     
-    @State private var selectedImageURLs: [URL] = []
     @State private var showError: Bool = false
     @State private var errorMessage: String = ""
-    @State private var showFilePicker = false
     
     var passwordsMatch: Bool {
         password == repeatPassword && !password.isEmpty
     }
     
-    let compressionLabels: [String] = ["Store", "Fast", "", "Normal", "", "Slow"]
-    let imageTypes: [String] = ["JPEG", "PNG", "HEIC", "WEBP", "TIFF", "BMP", "GIF"]
-    
     var body: some View {
-        ZStack {
-            VStack(alignment: .leading) {
-                GroupBox {
-                    VStack(spacing: 15) {
-                        VStack (spacing: 10) {
-                            Text("Method: No Compression")
-                                .padding(.leading, -110)
-                            Slider(value: $compressionLevel, in: 0...5, step: 1)
-                                .frame(width: 250)
+        if isConversionContext {
+            ZStack {
+                VStack(alignment: .leading) {
+                    GroupBox {
+                        VStack(spacing: 15) {
+                            VStack(spacing: 10) {
+                                Text("Method: No Compression")
+                                    .padding(.leading, -110)
+                                Slider(value: $compressionLevel, in: 0...5, step: 1)
+                                    .frame(width: 250)
+                                HStack(spacing: 0) {
+                                    ForEach(0..<6) { _ in
+                                        Text("")
+                                            .frame(width: 250 / 5, alignment: .center)
+                                    }
+                                }
+                                .padding(.horizontal, -15)
+                            }
                             
-                            HStack (spacing: 0) {
-                                ForEach(Array(compressionLabels.enumerated()), id: \.offset) { index, label in
-                                    Text(label)
-                                        .font(.caption)
-                                        .frame(width: 250 / 5, alignment: .center)
-                                }
-                            }
-                            .padding(.horizontal, -15)
-                        }
-                        
-                        VStack(spacing: 10) {
-                            HStack(spacing: 0) {
-                                Text("Password: ")
-                                    .frame(alignment: .trailing)
-                                SecureField("", text: $password)
-                                    .frame(width: 150)
-                                
-                                Image(systemName: displayedLockImage)
-                                    .imageScale(.small)
-                                    .padding(.leading, 5)
-                                    .frame(width: 20)
-                                
-                                Button(action: {
-                                    showPassword.toggle()
-                                }) {
-                                    Image(systemName: showPassword ? "eye.slash" : "eye")
-                                        .foregroundColor(isHovered ? .white : .primary)
+                            VStack(spacing: 10) {
+                                HStack(spacing: 0) {
+                                    Text("Password: ")
+                                        .frame(alignment: .trailing)
+                                    SecureField("", text: $password)
+                                        .frame(width: 150)
+                                    Image(systemName: displayedLockImage)
                                         .imageScale(.small)
+                                        .padding(.leading, 5)
+                                        .frame(width: 20)
+                                    Button(action: {
+                                        showPassword.toggle()
+                                    }) {
+                                        Image(systemName: showPassword ? "eye.slash" : "eye")
+                                            .foregroundColor(isHovered ? .white : .primary)
+                                            .imageScale(.small)
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                    .onHover { hovering in
+                                        isHovered = hovering
+                                    }
+                                    .padding(.leading, 5)
                                 }
-                                .buttonStyle(PlainButtonStyle())
-                                .onHover { hovering in
-                                    isHovered = hovering
+                                HStack(spacing: 0) {
+                                    Text("Repeat: ")
+                                        .frame(alignment: .trailing)
+                                    SecureField("", text: $repeatPassword)
+                                        .frame(width: 150)
                                 }
-                                .padding(.leading, 5)
+                                .padding(.trailing, 24)
                             }
-                            HStack(spacing: 0) {
-                                Text("Repeat: ")
-                                    .frame(alignment: .trailing)
-                                
-                                SecureField("", text: $repeatPassword)
-                                    .frame(width: 150)
-                            }
-                            .padding(.trailing, 24)
-                        }
-                        .onChange(of: passwordsMatch) { oldValue, newValue in
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                if self.passwordsMatch == newValue {
+                            .onChange(of: passwordsMatch) { oldValue, newValue in
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                                     self.displayedLockImage = newValue ? "lock.fill" : "lock.open.fill"
                                 }
                             }
+                            
+                            if passwordsMatch {
+                                Toggle("Use AES-256 encryption", isOn: $useEncryption)
+                                    .padding(.trailing, 90)
+                            }
                         }
-                        
-                        if passwordsMatch {
-                            Toggle("Use AES-256 encryption", isOn: $useEncryption)
-                                .padding(.trailing, 90)
-                        }
+                        .padding()
                     }
-                    .padding()
+                    .padding(1)
+                    
+                    Toggle("Verify compression integrity", isOn: $verifyIntegrity)
+                        .padding(.leading, 10)
+                    Toggle("Delete file(s) after transfer", isOn: $deleteFiles)
+                        .padding(.leading, 10)
                 }
-                .padding(1)
-                
-                Toggle("Verify compression integrity", isOn: $verifyIntegrity)
-                    .padding(.leading, 10)
-                Toggle("Delete file(s) after transfer", isOn: $deleteFiles)
-                    .padding(.leading, 10)
-            }
-            .padding(.top, isConversionContext ? -30 : -10)
-            .fixedSize()
-            .animation(.easeInOut, value: passwordsMatch)
-            .toolbar {
-                if isConversionContext {
+                .padding(.top, -30)
+                .fixedSize()
+                .animation(.easeInOut, value: passwordsMatch)
+                .toolbar {
                     ToolbarItem(placement: .primaryAction) {
                         Picker("Format", selection: $selectedImageType) {
-                            ForEach(imageTypes, id: \.self) {
+                            ForEach(["JPEG", "PNG", "HEIC", "WEBP", "TIFF", "BMP", "GIF"], id: \.self) {
                                 Text($0)
                             }
                         }
                         .frame(width: 75)
                     }
                 }
-            }
-            
-            if isConversionContext {
+                
                 VStack {
                     Spacer()
                     ZStack {
@@ -145,7 +129,7 @@ struct SettingsView: View {
                                 inputUrls: fileHandler.inputUrls,
                                 selectedImageType: selectedImageType,
                                 compressionLevel: compressionLevel,
-                                isConversionContext: isConversionContext
+                                isConversionContext: true
                             ) { error in
                                 if let error = error {
                                     errorMessage = error
@@ -163,10 +147,27 @@ struct SettingsView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+        } else {
+            HStack(spacing: 0) {
+                ImportedImagesPanel()
+                    .frame(minWidth: 200, minHeight: 300)
+                Divider()
+                VStack(spacing: 0) {
+                    SortingConversionPanel()
+                        .frame(minHeight: 150)
+                    Divider()
+                    CompressionEncryptionPanel()
+                        .frame(minHeight: 150)
+                }
+                .frame(minWidth: 300)
+            }
+            .padding()
         }
-        .onAppear {
-            print("SettingsView appeared with conversion context: \(isConversionContext)")
-            print("Number of files: \(fileHandler.inputUrls.count)")
-        }
+    }
+}
+struct SettingsView_Previews: PreviewProvider {
+    static var previews: some View {
+        SettingsView(isConversionContext: false)
+            .environmentObject(FileHandler.shared)
     }
 }
